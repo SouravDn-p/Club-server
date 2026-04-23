@@ -9,7 +9,6 @@ import { map } from 'rxjs/operators';
 import { Request, Response } from 'express';
 import { ApiResponse } from '../types/global-api-response.Type';
 
-
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<
   T,

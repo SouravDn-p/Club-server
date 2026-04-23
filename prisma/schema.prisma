@@ -1,0 +1,259 @@
+// =======================
+// DATASOURCE & GENERATOR
+// =======================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =======================
+// ENUMS
+// =======================
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum FilmCategory {
+  Film_Night
+  Film_Study
+  Family_Feature
+  Double_Feature
+  Story_Craft
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+// =======================
+// USERS & AUTH
+// =======================
+
+model User {
+  id        Int   @id @default(autoincrement())
+  name      String?
+  email     String   @unique
+  password  String
+  phone     String?
+  avatarUrl String?
+
+  isVerified Boolean @default(false)
+  isDeleted  Boolean @default(false)
+  isBlocked  Boolean @default(false)
+
+  role      UserRole @default(USER)
+  credits   Int      @default(0)
+
+  // relations
+  lastSubscriptionPlan   SubscriptionPlan? @relation(fields: [lastSubscriptionPlanId], references: [id])
+  lastSubscriptionPlanId Int?
+
+  authTokens AuthToken[]
+  payments   Payment[]
+  reviews    Review[]
+  posts      Post[]
+  comments   PostComment[]
+  likes      PostLike[]
+  unlocked   UnlockedContent[]
+  giftUsages GiftCardUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthToken {
+  id          Int   @id @default(autoincrement())
+  userId     Int
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// =======================
+// SUBSCRIPTION & PAYMENTS
+// =======================
+
+model SubscriptionPlan {
+  id          Int   @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float
+  credits     Int
+
+  // features as separate table (better than array)
+  features SubscriptionFeature[]
+
+  users    User[]
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+}
+
+model SubscriptionFeature {
+  id     Int   @id @default(autoincrement())
+  planId Int
+  text   String
+
+  plan SubscriptionPlan @relation(fields: [planId], references: [id])
+}
+
+model Payment {
+  id              Int   @id @default(autoincrement())
+  userId          Int
+  planId          Int
+  stripePaymentId String?
+  amount          Float
+  status          String
+  createdAt       DateTime @default(now())
+
+  user User             @relation(fields: [userId], references: [id])
+  plan SubscriptionPlan @relation(fields: [planId], references: [id])
+}
+
+model GiftCard {
+  id            Int   @id @default(autoincrement())
+  code          String       @unique
+  discountType  DiscountType
+  image         String?
+  discountValue Float
+  expiresAt     DateTime?
+  isActive      Boolean      @default(true)
+
+  usages GiftCardUsage[]
+}
+
+model GiftCardUsage {
+  id         Int   @id @default(autoincrement())
+  userId      Int
+  giftCardId Int
+  usedAt     DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  giftCard GiftCard @relation(fields: [giftCardId], references: [id])
+}
+
+// =======================
+// FILM NOTES
+// =======================
+
+model FilmNote {
+  id                 Int   @id @default(autoincrement())
+  name               String
+  description        String?
+  year               Int?
+  genre              String?
+  directorName       String?
+  writerName         String?
+  poster1            String?
+  poster2            String?
+  shortDescription   String?
+  directorsSignature String?
+
+  categories FilmNoteCategory[]
+  contents   FilmNoteContent[]
+  unlocked   UnlockedContent[]
+
+  createdAt DateTime @default(now())
+}
+
+model FilmNoteCategory {
+  id         Int   @id @default(autoincrement())
+  filmNoteId Int
+  category   FilmCategory
+
+  filmNote FilmNote @relation(fields: [filmNoteId], references: [id])
+}
+
+model FilmNoteContent {
+  id         Int   @id @default(autoincrement())
+  filmNoteId Int
+  category   FilmCategory
+  pdfUrl     String
+
+  filmNote FilmNote @relation(fields: [filmNoteId], references: [id])
+}
+
+model UnlockedContent {
+  id         Int   @id @default(autoincrement())
+  userId     Int
+  filmNoteId Int
+  category   FilmCategory
+  creditsUsed Int         @default(1)
+  unlockedAt DateTime     @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  filmNote FilmNote @relation(fields: [filmNoteId], references: [id])
+
+  @@unique([userId, filmNoteId, category]) // prevent duplicate unlock
+}
+
+// =======================
+// REVIEWS
+// =======================
+
+model Review {
+  id        Int   @id @default(autoincrement())
+  userId    Int
+  name      String?
+  email     String?
+  location  String?
+  rating    Int
+  review    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// =======================
+// BLOG / POSTS
+// =======================
+
+model Post {
+  id          Int   @id @default(autoincrement())
+  title       String
+  content     String
+  description String?
+  image       String?
+  views       Int      @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  authorId Int
+  author   User @relation(fields: [authorId], references: [id])
+
+  comments PostComment[]
+  likes    PostLike[]
+}
+
+model PostComment {
+  id        Int   @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  comment   String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
+
+model PostLike {
+  id        Int   @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([postId, userId]) // prevent duplicate likes
+}
