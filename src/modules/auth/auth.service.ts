@@ -13,6 +13,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from 'src/common/types/commonAuthTypes';
 import { SafeUser } from '../users/types/userTypes';
+import { ApiResponseHelper } from 'src/common/utils/api-response.util';
 
 @Injectable()
 export class AuthService {
@@ -53,7 +54,7 @@ export class AuthService {
     const user = await this.usersService.create(dto);
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.storeRefreshToken(user.id, tokens.refreshToken);
-    return { user, tokens };
+    return ApiResponseHelper.success({ user, tokens } ,"User Created Successfully" , 200);
   }
 
   async login(dto: LoginDto): Promise<{ user: SafeUser; tokens: { accessToken: string; refreshToken: string } }> {

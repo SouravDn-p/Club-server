@@ -18,10 +18,10 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
 import { RefreshAuthGuard } from 'src/common/guards/refresh.auth.guard';
-import { GoogleAuthGuard } from 'src/common/guards/google.auth.guard';
 import type { JwtUser } from 'src/common/types/commonAuthTypes';
 import { setAuthCookies, clearAuthCookies } from 'src/common/utils/cookie.util';
 import type { SafeUser } from '../users/types/userTypes';
+import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
