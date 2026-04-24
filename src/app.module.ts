@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './services/prisma/prisma.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { PostsModule } from './modules/posts/posts.module';
 import appConfig from './config/app.config';
 import jwtConfig from './config/jwt.config';
 import cloudinaryConfig from './config/cloudinary.config';
@@ -26,6 +27,7 @@ import googleOauthConfig from './config/google-oauth.config';
     UsersModule,
     PrismaModule,
     ReviewsModule,
+    PostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

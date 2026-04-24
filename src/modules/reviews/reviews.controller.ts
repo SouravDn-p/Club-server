@@ -14,7 +14,6 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 export class ReviewsController {
     constructor(private readonly reviews : ReviewsService){}
 
-
     @Get('analytics')
     @ApiOperation({ summary: 'Get review analytics (avg, total, breakdown)' })
     async getAnalytics() {

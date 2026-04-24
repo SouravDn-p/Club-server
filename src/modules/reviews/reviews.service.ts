@@ -53,7 +53,7 @@ export class ReviewsService {
   };
 
   ratingsGroup.forEach((item) => {
-    breakdown[item.rating] = item._count?.rating || 0;
+    breakdown[item.rating] = (item._count as any)?.rating || 0;
   });
 
   return {
