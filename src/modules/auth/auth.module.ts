@@ -1,25 +1,27 @@
 import { Module } from '@nestjs/common';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { UsersModule } from '../users/users.module';
-import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { MulterModule } from '@nestjs/platform-express';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+
+import { AuthService } from './auth.service';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshStrategy } from './strategies/refresh.strategy';
+import { UsersModule } from '../users/users.module';
+import { PrismaModule } from 'src/services/prisma/prisma.module';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { AuthController } from './auth.controller';
 
 @Module({
-  imports : [
+  imports: [
     UsersModule,
-    PassportModule.register({
-      defaultStrategy : 'jwt',
-    }),
+    PrismaModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-    secret: process.env.JWT_ACCESS_SECRET,
-    signOptions: { expiresIn: '1d' },
-  }),
-    MulterModule.register({ dest: './uploads/avatars' }),
+      secret: process.env.JWT_ACCESS_SECRET,
+      signOptions: { expiresIn: '15m' },
+    }),
+    
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy]
+  providers: [AuthService, JwtStrategy, RefreshStrategy, GoogleStrategy],
 })
 export class AuthModule {}

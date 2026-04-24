@@ -1,40 +1,18 @@
-import { UserRole } from "@prisma/client";
-import { Decimal } from "@prisma/client/runtime/client";
+import { UserRole } from '@prisma/client';
 
-
-export interface User {
+// Matches the Prisma User model (without password)
+export interface SafeUser {
   id: number;
-  firstName: string;
-  lastName?: string | null;
+  name: string | null;
   email: string;
-  phone?: string | null;
-  avatarUrl?: string | null;
+  phone: string | null;
+  avatarUrl: string | null;
+  provider: string | null;
   isVerified: boolean;
-  isBlocked: boolean;
   isDeleted: boolean;
-  passwordHash?: string | null;
+  isBlocked: boolean;
   role: UserRole;
-  walletBalance: Decimal;
+  credits: number;
   createdAt: Date;
   updatedAt: Date;
-  lastLoginAt?: Date | null;
-  deletedAt?: Date | null;
-}
-
-export interface SafeUser {
-  id: number
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  avatarUrl: string
-  isVerified: boolean
-  isBlocked: boolean
-  isDeleted: boolean
-  role: UserRole
-  walletBalance: Decimal
-  createdAt: Date
-  updatedAt: Date
-  lastLoginAt: Date | null
-  deletedAt: Date | null
 }

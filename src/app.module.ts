@@ -9,6 +9,7 @@ import appConfig from './config/app.config';
 import jwtConfig from './config/jwt.config';
 import cloudinaryConfig from './config/cloudinary.config';
 import databaseConfig from './config/database.config';
+import googleOauthConfig from './config/google-oauth.config';
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import databaseConfig from './config/database.config';
         `.env`,
         `.env.${process.env.NODE_ENV || 'development'}`
       ],
-      load: [appConfig, jwtConfig, cloudinaryConfig, databaseConfig],
+      load: [appConfig, jwtConfig, cloudinaryConfig, databaseConfig, googleOauthConfig],
     }),
     AuthModule,
     UsersModule,

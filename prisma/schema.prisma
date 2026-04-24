@@ -40,9 +40,12 @@ model User {
   id        Int   @id @default(autoincrement())
   name      String?
   email     String   @unique
-  password  String
+  password  String?
   phone     String?
   avatarUrl String?
+
+  provider   String?  // e.g. "google", "github", "credentials"
+  providerId String?  // OAuth provider's user ID
 
   isVerified Boolean @default(false)
   isDeleted  Boolean @default(false)
