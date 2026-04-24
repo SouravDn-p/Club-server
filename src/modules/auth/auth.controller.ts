@@ -18,10 +18,11 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
 import { RefreshAuthGuard } from 'src/common/guards/refresh.auth.guard';
-import type { JwtUser } from 'src/common/types/commonAuthTypes';
-import { setAuthCookies, clearAuthCookies } from 'src/common/utils/cookie.util';
-import type { SafeUser } from '../users/types/userTypes';
 import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
+import type { JwtUser } from 'src/common/types/commonAuthTypes';
+import type { SafeUser } from '../users/types/userTypes';
+import { setAuthCookies, clearAuthCookies } from 'src/common/utils/cookie.util';
+import { ApiResponseHelper } from 'src/common/utils/api-response.util';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -30,13 +31,14 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @HttpCode(HttpStatus.CREATED)
   async register(
     @Body() dto: CreateUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, tokens } = await this.authService.register(dto);
     setAuthCookies(res, tokens);
-    return { user };
+    return ApiResponseHelper.success(user, 'Account created successfully', HttpStatus.CREATED);
   }
 
   @Public()
@@ -48,7 +50,7 @@ export class AuthController {
   ) {
     const { user, tokens } = await this.authService.login(dto);
     setAuthCookies(res, tokens);
-    return { user };
+    return ApiResponseHelper.success(user, 'Logged in successfully');
   }
 
   @UseGuards(RefreshAuthGuard)
@@ -60,13 +62,14 @@ export class AuthController {
   ) {
     const tokens = await this.authService.refreshTokens(user.userId, user.refreshToken);
     setAuthCookies(res, tokens);
-    return { message: 'Tokens refreshed' };
+    return ApiResponseHelper.success(null, 'Tokens refreshed successfully');
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async me(@CurrentUser() user: JwtUser) {
-    return this.authService.me(user.userId);
+    const data = await this.authService.me(user.userId);
+    return ApiResponseHelper.success(data, 'User profile fetched');
   }
 
   @UseGuards(JwtAuthGuard)
@@ -78,7 +81,7 @@ export class AuthController {
   ) {
     await this.authService.logout(user.userId);
     clearAuthCookies(res);
-    return { message: 'Logged out successfully' };
+    return ApiResponseHelper.success(null, 'Logged out successfully');
   }
 
   // ── Google OAuth ──────────────────────────────────────────────
@@ -87,7 +90,7 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @Get('google')
   googleLogin() {
-    // Passport redirects to Google — no body needed
+    // Passport handles the redirect to Google
   }
 
   @Public()
@@ -97,9 +100,8 @@ export class AuthController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const { user, tokens } = req.user as { user: SafeUser; tokens: { accessToken: string; refreshToken: string } };
+    const { tokens } = req.user as { user: SafeUser; tokens: { accessToken: string; refreshToken: string } };
     setAuthCookies(res, tokens);
-    // Redirect to frontend after successful login
     res.redirect(`${process.env.FRONTEND_URL}/auth/success`);
   }
 }
