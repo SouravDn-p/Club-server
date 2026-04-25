@@ -13,6 +13,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateGiftCardDto } from './dto/create-gift-card.dto';
+import { ClaimGiftCardDto } from './dto/claim-gift-card.dto';
+import { ApplyGiftCardDto } from './dto/apply-gift-card.dto';
 
 @Controller('gift-cards')
 @ApiTags('gift-cards')
@@ -39,14 +41,14 @@ export class GiftCardController {
   //  CLAIM GIFT CARD
   @UseGuards(JwtAuthGuard)
   @Post('claim')
-  claim(@Body() dto, @CurrentUser() user: any) {
-    return this.service.claim(dto.code, user.userId);
+  claim(@Body() dto: ClaimGiftCardDto, @CurrentUser() user: any) {
+    return this.service.claim(dto.id, user.userId);
   }
 
   //  APPLY GIFT CARD (during subscription purchase)
   @UseGuards(JwtAuthGuard)
   @Post('apply')
-  apply(@Body() dto, @CurrentUser() user: any) {
-    return this.service.apply(dto.code, dto.planId, user.userId);
+  apply(@Body() dto: ApplyGiftCardDto, @CurrentUser() user: any) {
+    return this.service.apply(dto.giftCardId, dto.planId, user.userId);
   }
 }

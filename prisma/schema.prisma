@@ -32,6 +32,12 @@ enum DiscountType {
   FIXED
 }
 
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
 // =======================
 // USERS & AUTH
 // =======================
@@ -89,11 +95,12 @@ model AuthToken {
 // =======================
 
 model SubscriptionPlan {
-  id          Int   @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   title       String
   description String?
   price       Float
   credits     Int
+  image       String
 
   // features as separate table (better than array)
   features SubscriptionFeature[]
@@ -118,7 +125,7 @@ model Payment {
   planId          Int
   stripePaymentId String?
   amount          Float
-  status          String
+  status          PaymentStatus
   createdAt       DateTime @default(now())
 
   user User             @relation(fields: [userId], references: [id])

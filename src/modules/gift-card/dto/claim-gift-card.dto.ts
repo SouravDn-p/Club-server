@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsInt } from 'class-validator';
 
 export class ClaimGiftCardDto {
-  @ApiProperty({ example: 'WELCOME100' })
-  @IsString()
-  code: string;
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  id: number;
 }

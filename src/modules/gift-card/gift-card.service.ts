@@ -57,9 +57,9 @@ export class GiftCardService {
   }
 
   // User: CLAIM
-  async claim(code: string, userId: number) {
+  async claim(id: number, userId: number) {
     const giftCard = await this.prisma.giftCard.findUnique({
-      where: { code },
+      where: { id },
     });
 
     if (!giftCard || !giftCard.isActive) {
@@ -90,9 +90,9 @@ export class GiftCardService {
   }
 
   // APPLY DURING SUBSCRIPTION
-  async apply(code: string, planId: number, userId: number) {
+  async apply(id: number, planId: number, userId: number) {
     const giftCard = await this.prisma.giftCard.findUnique({
-      where: { code },
+      where: { id },
     });
 
     if (!giftCard) throw new BadRequestException('Invalid card');
