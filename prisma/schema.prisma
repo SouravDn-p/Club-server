@@ -141,10 +141,12 @@ model GiftCardUsage {
   id         Int   @id @default(autoincrement())
   userId      Int
   giftCardId Int
-  usedAt     DateTime @default(now())
+  usedAt     DateTime?
+  claimedAt  DateTime    @default(now())
 
   user     User     @relation(fields: [userId], references: [id])
   giftCard GiftCard @relation(fields: [giftCardId], references: [id])
+  @@unique([userId, giftCardId])
 }
 
 // =======================
