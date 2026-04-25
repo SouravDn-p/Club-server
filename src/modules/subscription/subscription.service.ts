@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PaymentStatus } from '@prisma/client';
 import { PrismaService } from 'src/services/prisma/prisma.service';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { handlePrismaError } from 'src/common/utils/prisma-error.util';
@@ -38,11 +39,15 @@ export class SubscriptionService {
 
   async createPlan(dto: CreatePlanDto, imageFile?: Express.Multer.File) {
     try {
-      let imageUrl: string | undefined;
-      if (imageFile) {
-        const upload = await this.cloudinary.uploadFile(imageFile, 'subscriptions', 'image');
-        imageUrl = upload.url;
+      if (!imageFile) {
+        throw new BadRequestException('Plan cover image is required');
       }
+
+      const { url: imageUrl } = await this.cloudinary.uploadFile(
+        imageFile,
+        'subscriptions',
+        'image',
+      );
 
       return await this.prisma.subscriptionPlan.create({
         data: {
@@ -106,17 +111,34 @@ export class SubscriptionService {
 
   async purchase(planId: number, userId: number) {
     try {
-      const plan = await this.prisma.subscriptionPlan.findUnique({
-        where: { id: planId },
-      });
+      const plan = await this.prisma.subscriptionPlan.findUnique({ where: { id: planId } });
       if (!plan) throw new NotFoundException('Plan not found');
 
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { credits: { increment: plan.credits } },
-      });
+      // Record payment and add credits in a transaction
+      const [payment] = await this.prisma.$transaction([
+        this.prisma.payment.create({
+          data: {
+            userId,
+            planId,
+            amount: plan.price,
+            status: PaymentStatus.SUCCESS,
+          },
+        }),
+        this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            credits: { increment: plan.credits },
+            lastSubscriptionPlanId: planId,
+          },
+        }),
+      ]);
 
-      return { message: 'Subscription purchased', creditsAdded: plan.credits };
+      return {
+        message: 'Subscription purchased successfully',
+        creditsAdded: plan.credits,
+        paymentId: payment.id,
+        status: PaymentStatus.SUCCESS,
+      };
     } catch (error) {
       handlePrismaError(error);
     }
