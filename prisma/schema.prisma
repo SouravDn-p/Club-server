@@ -80,14 +80,17 @@ model User {
 }
 
 model AuthToken {
-  id          Int   @id @default(autoincrement())
-  userId     Int
-  accessToken  String
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  sessionId    String   @unique  // UUID — one per login session
+  userAgent    String?
   refreshToken String
   expiresAt    DateTime
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 // =======================
