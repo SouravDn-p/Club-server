@@ -11,7 +11,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001'
+    ],
     credentials: true,
   });
 
@@ -48,10 +51,10 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(process.env.PORT ?? 5000);
-  console.log(`Server running on http://localhost:${process.env.PORT ?? 5000}`);
+  await app.listen(process.env.PORT || 5000);
+  console.log(`Server running on http://localhost:${process.env.PORT || 5000}`);
   console.log(
-    `Swagger UI available at http://localhost:${process.env.PORT ?? 5000}/api/docs`,
+    `Swagger UI available at http://localhost:${process.env.PORT || 5000}/api/docs`,
   );
 }
 void bootstrap();
