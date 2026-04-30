@@ -30,9 +30,19 @@ export class AuthService {
 
   // ── Google OAuth ──────────────────────────────────────────────────────────
 
-  async googleStrategyValidate(profile: any): Promise<AuthResult> {
+  async googleStrategyValidate(profile: {
+    id: string;
+    emails?: { value: string }[];
+    name?: { givenName: string; familyName: string };
+    photos?: { value: string }[];
+  }): Promise<AuthResult> {
     const { id: providerId, emails, name, photos } = profile;
-    const email = emails[0].value;
+    const email = emails?.[0]?.value;
+
+    if (!email) {
+      throw new UnauthorizedException('Email not provided by Google');
+    }
+
 
     let user = await this.prisma.user.findFirst({
       where: { OR: [{ provider: 'google', providerId }, { email }] },
@@ -42,8 +52,9 @@ export class AuthService {
       user = await this.prisma.user.create({
         data: {
           email,
-          name: `${name.givenName} ${name.familyName}`,
-          avatarUrl: photos[0]?.value ?? null,
+          name: name ? `${name.givenName} ${name.familyName}` : 'Google User',
+          avatarUrl: photos?.[0]?.value ?? null,
+
           provider: 'google',
           providerId,
           isVerified: true,
@@ -57,11 +68,31 @@ export class AuthService {
     }
 
     const sessionId = uuidv4();
-    const tokens = await this.generateTokens(user.id, user.email, user.role, sessionId);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      sessionId,
+    );
     await this.storeSession(user.id, sessionId, tokens.refreshToken);
 
-    const { password, ...safeUser } = user;
-    return { user: safeUser as SafeUser, tokens };
+    const safeUser: SafeUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      avatarUrl: user.avatarUrl,
+      provider: user.provider,
+      isVerified: user.isVerified,
+      isDeleted: user.isDeleted,
+      isBlocked: user.isBlocked,
+      role: user.role,
+      credits: user.credits,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    return { user: safeUser, tokens };
   }
 
   // ── Register ──────────────────────────────────────────────────────────────
@@ -69,7 +100,12 @@ export class AuthService {
   async register(dto: CreateUserDto): Promise<AuthResult> {
     const user = await this.usersService.create(dto);
     const sessionId = uuidv4();
-    const tokens = await this.generateTokens(user.id, user.email, user.role, sessionId);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      sessionId,
+    );
     await this.storeSession(user.id, sessionId, tokens.refreshToken);
     return { user, tokens };
   }
@@ -81,7 +117,8 @@ export class AuthService {
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
     if (user.isBlocked) throw new UnauthorizedException('Account is blocked');
-    if (user.isDeleted) throw new UnauthorizedException('Account has been deleted');
+    if (user.isDeleted)
+      throw new UnauthorizedException('Account has been deleted');
 
     if (!user.password) {
       throw new UnauthorizedException(
@@ -90,19 +127,44 @@ export class AuthService {
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+    if (!isPasswordValid)
+      throw new UnauthorizedException('Invalid credentials');
 
     const sessionId = uuidv4();
-    const tokens = await this.generateTokens(user.id, user.email, user.role, sessionId);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      sessionId,
+    );
     await this.storeSession(user.id, sessionId, tokens.refreshToken, userAgent);
 
-    const { password, ...safeUser } = user;
-    return { user: safeUser as SafeUser, tokens };
+    const safeUser: SafeUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      avatarUrl: user.avatarUrl,
+      provider: user.provider,
+      isVerified: user.isVerified,
+      isDeleted: user.isDeleted,
+      isBlocked: user.isBlocked,
+      role: user.role,
+      credits: user.credits,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    return { user: safeUser, tokens };
   }
 
   // ── Refresh ───────────────────────────────────────────────────────────────
 
-  async refreshTokens(userId: number, sessionId: string, rawRefreshToken: string): Promise<Tokens> {
+  async refreshTokens(
+    userId: number,
+    sessionId: string,
+    rawRefreshToken: string,
+  ): Promise<Tokens> {
     // Guard against legacy tokens that predate sessionId
     if (!sessionId || !rawRefreshToken) {
       throw new UnauthorizedException('Session expired — please log in again');
@@ -112,7 +174,11 @@ export class AuthService {
       where: { sessionId },
     });
 
-    if (!session || session.userId !== userId || session.expiresAt < new Date()) {
+    if (
+      !session ||
+      session.userId !== userId ||
+      session.expiresAt < new Date()
+    ) {
       throw new UnauthorizedException('Invalid or expired session');
     }
 
@@ -120,7 +186,12 @@ export class AuthService {
     if (!isValid) throw new UnauthorizedException('Invalid refresh token');
 
     const user = await this.usersService.findOne(userId);
-    const newTokens = await this.generateTokens(user.id, user.email, user.role, sessionId);
+    const newTokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      sessionId,
+    );
 
     // Update only this session's token
     const hashedRefresh = await bcrypt.hash(newTokens.refreshToken, 10);
@@ -191,13 +262,16 @@ export class AuthService {
     userAgent?: string,
   ): Promise<void> {
     // Enforce max session limit — evict oldest if at cap
-    const sessionCount = await this.prisma.authToken.count({ where: { userId } });
+    const sessionCount = await this.prisma.authToken.count({
+      where: { userId },
+    });
     if (sessionCount >= MAX_SESSIONS) {
       const oldest = await this.prisma.authToken.findFirst({
         where: { userId },
         orderBy: { createdAt: 'asc' },
       });
-      if (oldest) await this.prisma.authToken.delete({ where: { id: oldest.id } });
+      if (oldest)
+        await this.prisma.authToken.delete({ where: { id: oldest.id } });
     }
 
     const hashedRefresh = await bcrypt.hash(rawRefreshToken, 10);
@@ -206,7 +280,13 @@ export class AuthService {
 
     try {
       await this.prisma.authToken.create({
-        data: { userId, sessionId, refreshToken: hashedRefresh, userAgent, expiresAt },
+        data: {
+          userId,
+          sessionId,
+          refreshToken: hashedRefresh,
+          userAgent,
+          expiresAt,
+        },
       });
     } catch (error) {
       this.handlePrismaError(error);
@@ -216,14 +296,22 @@ export class AuthService {
   private handlePrismaError(error: unknown): never {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       switch (error.code) {
-        case 'P2002': throw new ConflictException('Duplicate session');
-        case 'P2025': throw new UnauthorizedException('Session not found');
-        case 'P2003': throw new ConflictException('Foreign key constraint failed');
-        default: throw new InternalServerErrorException(`Database error: ${error.code}`);
+        case 'P2002':
+          throw new ConflictException('Duplicate session');
+        case 'P2025':
+          throw new UnauthorizedException('Session not found');
+        case 'P2003':
+          throw new ConflictException('Foreign key constraint failed');
+        default:
+          throw new InternalServerErrorException(
+            `Database error: ${error.code}`,
+          );
       }
     }
     if (error instanceof Prisma.PrismaClientValidationError) {
-      throw new InternalServerErrorException('Invalid data provided to database');
+      throw new InternalServerErrorException(
+        'Invalid data provided to database',
+      );
     }
     throw error;
   }

@@ -6,7 +6,13 @@ import { CLOUDINARY } from './cloudinary.provider';
 
 type AllowedType = 'image' | 'pdf' | 'any';
 
-const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+const ALLOWED_IMAGE_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+];
 const ALLOWED_PDF_MIMES = ['application/pdf'];
 
 @Injectable()
@@ -29,7 +35,9 @@ export class CloudinaryService {
     const isPdf = ALLOWED_PDF_MIMES.includes(file.mimetype);
 
     if (allowedType === 'image' && !isImage) {
-      throw new BadRequestException('Only image files are allowed (jpeg, png, webp, gif, svg)');
+      throw new BadRequestException(
+        'Only image files are allowed (jpeg, png, webp, gif, svg)',
+      );
     }
 
     if (allowedType === 'pdf' && !isPdf) {

@@ -1,9 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { FilmCategory, Prisma } from '@prisma/client';
+
 import { PrismaService } from 'src/services/prisma/prisma.service';
 import { CreateFilmNoteDto } from './dto/create-film-note.dto';
 import { UpdateFilmNoteDto } from './dto/update-film-note.dto';
@@ -48,7 +45,7 @@ export class FilmNotesService {
     },
   };
 
-  // 📌 GET ALL (pagination + search + filter)
+  //  GET ALL (pagination + search + filter)
   async getAll(query: GetFilmNotesQueryDto) {
     const { page = 1, limit = 10, search, genre } = query;
     const skip = (page - 1) * limit;
@@ -111,35 +108,60 @@ export class FilmNotesService {
   }
 
   // CREATE
-  async create(dto: CreateFilmNoteDto, files?: { pdf?: Express.Multer.File[], poster1?: Express.Multer.File[], poster2?: Express.Multer.File[] }) {
+  async create(
+    dto: CreateFilmNoteDto,
+    files?: {
+      pdf?: Express.Multer.File[];
+      poster1?: Express.Multer.File[];
+      poster2?: Express.Multer.File[];
+    },
+  ) {
     try {
       let pdfUrl: string | undefined;
       let poster1Url: string | undefined;
       let poster2Url: string | undefined;
 
       if (files?.pdf?.[0]) {
-        const upload = await this.cloudinary.uploadFile(files.pdf[0], 'film-notes/pdfs', 'pdf');
+        const upload = await this.cloudinary.uploadFile(
+          files.pdf[0],
+          'film-notes/pdfs',
+          'pdf',
+        );
         pdfUrl = upload.url;
       }
       if (files?.poster1?.[0]) {
-        const upload = await this.cloudinary.uploadFile(files.poster1[0], 'film-notes/posters', 'image');
+        const upload = await this.cloudinary.uploadFile(
+          files.poster1[0],
+          'film-notes/posters',
+          'image',
+        );
         poster1Url = upload.url;
       }
       if (files?.poster2?.[0]) {
-        const upload = await this.cloudinary.uploadFile(files.poster2[0], 'film-notes/posters', 'image');
+        const upload = await this.cloudinary.uploadFile(
+          files.poster2[0],
+          'film-notes/posters',
+          'image',
+        );
         poster2Url = upload.url;
       }
 
       // Build contents: from uploaded PDF + any provided URL-based contents
-      const contentsData: { category: any; pdfUrl: string }[] = [];
+      const contentsData: { category: FilmCategory; pdfUrl: string }[] = [];
 
       if (pdfUrl && dto.pdfCategory) {
-        contentsData.push({ category: dto.pdfCategory, pdfUrl });
+        contentsData.push({
+          category: dto.pdfCategory,
+          pdfUrl,
+        });
       }
 
       if (Array.isArray(dto.contents)) {
         for (const c of dto.contents) {
-          contentsData.push({ category: c.category, pdfUrl: c.pdfUrl });
+          contentsData.push({
+            category: c.category,
+            pdfUrl: c.pdfUrl,
+          });
         }
       }
 
@@ -156,13 +178,13 @@ export class FilmNotesService {
           shortDescription: dto.shortDescription,
           directorsSignature: dto.directorsSignature,
 
-          categories: Array.isArray(dto.categories) && dto.categories.length > 0
-            ? { create: dto.categories.map((c) => ({ category: c })) }
-            : undefined,
+          categories:
+            Array.isArray(dto.categories) && dto.categories.length > 0
+              ? { create: dto.categories.map((c) => ({ category: c })) }
+              : undefined,
 
-          contents: contentsData.length > 0
-            ? { create: contentsData }
-            : undefined,
+          contents:
+            contentsData.length > 0 ? { create: contentsData } : undefined,
         },
         select: this.safeSelect,
       });
@@ -172,35 +194,60 @@ export class FilmNotesService {
   }
 
   //  UPDATE
-  async update(id: number, dto: UpdateFilmNoteDto, files?: { pdf?: Express.Multer.File[], poster1?: Express.Multer.File[], poster2?: Express.Multer.File[] }) {
+  async update(
+    id: number,
+    dto: UpdateFilmNoteDto,
+    files?: {
+      pdf?: Express.Multer.File[];
+      poster1?: Express.Multer.File[];
+      poster2?: Express.Multer.File[];
+    },
+  ) {
     try {
       // Strip file-only fields — they come via @UploadedFiles(), not Prisma data
-      const { categories, contents, pdfCategory, pdf, poster1, poster2, ...restData } = dto as any;
+      const { categories, contents, pdfCategory, ...restData } = dto as {
+        categories?: FilmCategory[];
+        contents?: { category: FilmCategory; pdfUrl: string }[];
+        pdfCategory?: FilmCategory;
+        [key: string]: any;
+      };
 
       const updateData: Prisma.FilmNoteUpdateInput = { ...restData };
 
       if (Array.isArray(categories) && categories.length > 0) {
         updateData.categories = {
           deleteMany: {},
-          create: categories.map((c: any) => ({ category: c })),
+          create: categories.map((c: FilmCategory) => ({ category: c })),
         };
       }
 
       let pdfUrl: string | undefined;
       if (files?.pdf?.[0]) {
-        const upload = await this.cloudinary.uploadFile(files.pdf[0], 'film-notes/pdfs', 'pdf');
+        const upload = await this.cloudinary.uploadFile(
+          files.pdf[0],
+          'film-notes/pdfs',
+          'pdf',
+        );
         pdfUrl = upload.url;
       }
       if (files?.poster1?.[0]) {
-        const upload = await this.cloudinary.uploadFile(files.poster1[0], 'film-notes/posters', 'image');
+        const upload = await this.cloudinary.uploadFile(
+          files.poster1[0],
+          'film-notes/posters',
+          'image',
+        );
         updateData.poster1 = upload.url;
       }
       if (files?.poster2?.[0]) {
-        const upload = await this.cloudinary.uploadFile(files.poster2[0], 'film-notes/posters', 'image');
+        const upload = await this.cloudinary.uploadFile(
+          files.poster2[0],
+          'film-notes/posters',
+          'image',
+        );
         updateData.poster2 = upload.url;
       }
 
-      const contentsData: { category: any; pdfUrl: string }[] = [];
+      const contentsData: { category: FilmCategory; pdfUrl: string }[] = [];
 
       if (pdfUrl && pdfCategory) {
         contentsData.push({ category: pdfCategory, pdfUrl });
@@ -208,7 +255,10 @@ export class FilmNotesService {
 
       if (Array.isArray(contents)) {
         for (const c of contents) {
-          contentsData.push({ category: c.category, pdfUrl: c.pdfUrl });
+          contentsData.push({
+            category: c.category,
+            pdfUrl: c.pdfUrl,
+          });
         }
       }
 
@@ -245,7 +295,7 @@ export class FilmNotesService {
           userId_filmNoteId_category: {
             userId,
             filmNoteId,
-            category: category as any,
+            category: category as FilmCategory,
           },
         },
       });
@@ -261,7 +311,7 @@ export class FilmNotesService {
         data: {
           userId,
           filmNoteId,
-          category: category as any,
+          category: category as FilmCategory,
         },
       });
 

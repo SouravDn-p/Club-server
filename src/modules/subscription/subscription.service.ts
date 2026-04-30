@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PaymentStatus } from '@prisma/client';
 import { PrismaService } from 'src/services/prisma/prisma.service';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
@@ -67,15 +71,23 @@ export class SubscriptionService {
     }
   }
 
-  async updatePlan(id: number, dto: UpdatePlanDto, imageFile?: Express.Multer.File) {
+  async updatePlan(
+    id: number,
+    dto: UpdatePlanDto,
+    imageFile?: Express.Multer.File,
+  ) {
     try {
       await this.getPlan(id);
 
-      const { features, image, ...rest } = dto as any;
+      const { features, ...rest } = dto as { features?: string[] };
 
       let imageUrl: string | undefined;
       if (imageFile) {
-        const upload = await this.cloudinary.uploadFile(imageFile, 'subscriptions', 'image');
+        const upload = await this.cloudinary.uploadFile(
+          imageFile,
+          'subscriptions',
+          'image',
+        );
         imageUrl = upload.url;
       }
 
@@ -111,7 +123,9 @@ export class SubscriptionService {
 
   async purchase(planId: number, userId: number) {
     try {
-      const plan = await this.prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+      const plan = await this.prisma.subscriptionPlan.findUnique({
+        where: { id: planId },
+      });
       if (!plan) throw new NotFoundException('Plan not found');
 
       // Record payment and add credits in a transaction

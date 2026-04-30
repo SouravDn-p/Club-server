@@ -3,12 +3,19 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy, StrategyOptions } from 'passport-jwt';
 import { Request } from 'express';
 
+interface JwtPayload {
+  sub: string;
+  email: string;
+  role: string;
+  sessionId: string;
+}
+
 @Injectable()
 export class RefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor() {
     const options: StrategyOptions = {
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => req?.cookies?.refreshToken ?? null,
+        (req: Request) => (req?.cookies?.refreshToken as string) ?? null,
       ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_REFRESH_SECRET as string,
@@ -17,8 +24,10 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
     super(options);
   }
 
-  async validate(req: Request, payload: any) {
-    const refreshToken = req.cookies?.refreshToken;
+  validate(req: Request, payload: JwtPayload) {
+    const cookies: Record<string, string | undefined> = req.cookies;
+    const refreshToken: string | undefined = cookies?.refreshToken;
+
     if (!refreshToken) throw new UnauthorizedException('Refresh token missing');
 
     return {
@@ -26,7 +35,7 @@ export class RefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
       email: payload.email,
       role: payload.role,
       sessionId: payload.sessionId,
-      refreshToken,
+      refreshToken: refreshToken,
     };
   }
 }

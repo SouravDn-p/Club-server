@@ -13,7 +13,9 @@ import { Type, Transform } from 'class-transformer';
 import { FilmCategory } from '@prisma/client';
 
 export class FilmNoteContentDto {
-  @IsEnum(FilmCategory, { message: `category must be one of: ${Object.values(FilmCategory).join(', ')}` })
+  @IsEnum(FilmCategory, {
+    message: `category must be one of: ${Object.values(FilmCategory).join(', ')}`,
+  })
   category: FilmCategory;
 
   @IsUrl()
@@ -26,7 +28,9 @@ export class CreateFilmNoteDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ example: 'A computer hacker learns from mysterious rebels...' })
+  @ApiPropertyOptional({
+    example: 'A computer hacker learns from mysterious rebels...',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -52,11 +56,19 @@ export class CreateFilmNoteDto {
   @IsString()
   writerName?: string;
 
-  @ApiPropertyOptional({ type: 'string', format: 'binary', description: 'Poster 1 image file' })
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Poster 1 image file',
+  })
   @IsOptional()
   poster1?: any;
 
-  @ApiPropertyOptional({ type: 'string', format: 'binary', description: 'Poster 2 image file' })
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Poster 2 image file',
+  })
   @IsOptional()
   poster2?: any;
 
@@ -80,12 +92,19 @@ export class CreateFilmNoteDto {
     if (!value) return undefined;
     let arr: string[];
     if (typeof value === 'string') {
-      try { arr = JSON.parse(value); } catch { arr = value.split(',').map((s: string) => s.trim()); }
+      try {
+        arr = JSON.parse(value) as string[];
+      } catch {
+        arr = value.split(',').map((s: string) => s.trim());
+      }
     } else {
-      arr = Array.isArray(value) ? value : [value];
+      arr = Array.isArray(value) ? (value as string[]) : [String(value)];
     }
+
     // Filter to only valid enum values — ignore the rest
-    const valid = arr.filter((v) => Object.values(FilmCategory).includes(v as FilmCategory));
+    const valid = arr.filter((v) =>
+      Object.values(FilmCategory).includes(v as FilmCategory),
+    );
     return valid.length > 0 ? valid : undefined;
   })
   @IsArray()
@@ -94,17 +113,21 @@ export class CreateFilmNoteDto {
 
   @ApiPropertyOptional({
     type: 'string',
-    description: 'JSON array: [{"category":"Film_Night","pdfUrl":"https://..."}]. Only needed if providing existing PDF URLs.',
+    description:
+      'JSON array: [{"category":"Film_Night","pdfUrl":"https://..."}]. Only needed if providing existing PDF URLs.',
   })
   @IsOptional()
   @Transform(({ value }) => {
     if (!value) return undefined;
     if (typeof value === 'string') {
       try {
-        const parsed = JSON.parse(value);
+        const parsed = JSON.parse(value) as unknown;
         return Array.isArray(parsed) && parsed.length > 0 ? parsed : undefined;
-      } catch { return undefined; }
+      } catch {
+        return undefined;
+      }
     }
+
     return Array.isArray(value) && value.length > 0 ? value : undefined;
   })
   @IsArray()
@@ -126,8 +149,9 @@ export class CreateFilmNoteDto {
   })
   @IsOptional()
   @Transform(({ value }) => {
-    if (!value || !Object.values(FilmCategory).includes(value as FilmCategory)) return undefined;
-    return value;
+    if (!value || !Object.values(FilmCategory).includes(value as FilmCategory))
+      return undefined;
+    return value as FilmCategory;
   })
   @IsEnum(FilmCategory)
   pdfCategory?: FilmCategory;

@@ -21,11 +21,14 @@ import googleOauthConfig from './config/google-oauth.config';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [
-        `.env`,
-        `.env.${process.env.NODE_ENV || 'development'}`
+      envFilePath: [`.env`, `.env.${process.env.NODE_ENV || 'development'}`],
+      load: [
+        appConfig,
+        jwtConfig,
+        cloudinaryConfig,
+        databaseConfig,
+        googleOauthConfig,
       ],
-      load: [appConfig, jwtConfig, cloudinaryConfig, databaseConfig, googleOauthConfig],
     }),
     AuthModule,
     UsersModule,

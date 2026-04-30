@@ -21,16 +21,12 @@ export function handlePrismaError(error: unknown): never {
         throw new ConflictException('Foreign key constraint failed');
 
       default:
-        throw new InternalServerErrorException(
-          `Database error: ${error.code}`,
-        );
+        throw new InternalServerErrorException(`Database error: ${error.code}`);
     }
   }
 
   if (error instanceof Prisma.PrismaClientValidationError) {
-    throw new InternalServerErrorException(
-      'Invalid data provided to database',
-    );
+    throw new InternalServerErrorException('Invalid data provided to database');
   }
 
   throw error;

@@ -19,7 +19,6 @@ import { AuthController } from './auth.controller';
       secret: process.env.JWT_ACCESS_SECRET,
       signOptions: { expiresIn: '15m' },
     }),
-    
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshStrategy, GoogleStrategy],

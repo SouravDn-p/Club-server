@@ -1,7 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/services/prisma/prisma.service';
 import { CreateGiftCardDto } from './dto/create-gift-card.dto';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
@@ -11,13 +8,18 @@ import { ApiResponseHelper } from 'src/common/utils/api-response.util';
 @Injectable()
 export class GiftCardService {
   constructor(
-        private prisma: PrismaService
-      , private cloudinary: CloudinaryService
+    private prisma: PrismaService,
+    private cloudinary: CloudinaryService,
   ) {}
 
-  async generateUniqueCode() {
-    const randomString = Math.random().toString(36).substring(2, 10).toUpperCase();
-    const existing = await this.prisma.giftCard.findUnique({ where: { code: randomString } });
+  async generateUniqueCode(): Promise<string> {
+    const randomString = Math.random()
+      .toString(36)
+      .substring(2, 10)
+      .toUpperCase();
+    const existing = await this.prisma.giftCard.findUnique({
+      where: { code: randomString },
+    });
     if (existing) return this.generateUniqueCode();
     return randomString;
   }
@@ -26,7 +28,11 @@ export class GiftCardService {
   async getAll() {
     try {
       const giftCards = await this.prisma.giftCard.findMany();
-      return ApiResponseHelper.success(giftCards,"Gift card list fetched successfully",200) ;
+      return ApiResponseHelper.success(
+        giftCards,
+        'Gift card list fetched successfully',
+        200,
+      );
     } catch (error) {
       handlePrismaError(error);
     }

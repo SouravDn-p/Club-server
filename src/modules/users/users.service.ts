@@ -66,7 +66,7 @@ export class UsersService {
     });
 
     if (!user) throw new NotFoundException(`User #${id} not found`);
-    return user as SafeUser;
+    return user;
   }
 
   // Used internally by auth — returns full user including password
@@ -88,7 +88,7 @@ export class UsersService {
         },
         select: this.safeSelect,
       });
-      return user as SafeUser;
+      return user;
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -110,7 +110,7 @@ export class UsersService {
         data,
         select: this.safeSelect,
       });
-      return user as SafeUser;
+      return user;
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -124,7 +124,7 @@ export class UsersService {
         where: { id },
         select: this.safeSelect,
       });
-      return user as SafeUser;
+      return user;
     } catch (error) {
       this.handlePrismaError(error);
     }
@@ -138,7 +138,7 @@ export class UsersService {
       data: { avatarUrl },
       select: this.safeSelect,
     });
-    return user as SafeUser;
+    return user;
   }
 
   // Centralised Prisma error handler
@@ -162,7 +162,9 @@ export class UsersService {
     }
 
     if (error instanceof Prisma.PrismaClientValidationError) {
-      throw new InternalServerErrorException('Invalid data provided to database');
+      throw new InternalServerErrorException(
+        'Invalid data provided to database',
+      );
     }
 
     throw error;

@@ -39,7 +39,11 @@ export class AuthController {
   ) {
     const { user, tokens } = await this.authService.register(dto);
     setAuthCookies(res, tokens);
-    return ApiResponseHelper.success(user, 'Account created successfully', HttpStatus.CREATED);
+    return ApiResponseHelper.success(
+      user,
+      'Account created successfully',
+      HttpStatus.CREATED,
+    );
   }
 
   @Public()
@@ -85,7 +89,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Logout from current device (deletes this session)' })
+  @ApiOperation({
+    summary: 'Logout from current device (deletes this session)',
+  })
   async logout(
     @CurrentUser() user: JwtUser,
     @Res({ passthrough: true }) res: Response,
@@ -119,8 +125,11 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
-  async googleCallback(@Req() req: Request, @Res() res: Response) {
-    const { tokens } = req.user as { user: SafeUser; tokens: { accessToken: string; refreshToken: string } };
+  googleCallback(@Req() req: Request, @Res() res: Response) {
+    const { tokens } = req.user as {
+      user: SafeUser;
+      tokens: { accessToken: string; refreshToken: string };
+    };
     setAuthCookies(res, tokens);
     res.redirect(`${process.env.FRONTEND_URL}/auth/success`);
   }

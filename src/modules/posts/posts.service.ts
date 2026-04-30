@@ -1,23 +1,27 @@
-import { BadRequestException, Body, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { ApiResponseHelper } from 'src/common/utils/api-response.util';
 import { handlePrismaError } from 'src/common/utils/prisma-error.util';
 import { PrismaService } from 'src/services/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
+
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { GetPostsQueryDto } from './dto/get-posts-query.dto';
 
 @Injectable()
 export class PostsService {
-    constructor(
-        private readonly prisma :PrismaService,
-         private readonly cloudinary : CloudinaryService
-    ){}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary: CloudinaryService,
+  ) {}
 
-    private safeSelect = {
+  private safeSelect = {
     id: true,
     title: true,
     content: true,
@@ -40,62 +44,60 @@ export class PostsService {
     },
   };
 
-
-
-    // Get ALl Posts
-    async GetPosts (query: GetPostsQueryDto){
+  // Get ALl Posts
+  async GetPosts(query: GetPostsQueryDto) {
     const { page = 1, limit = 10, search } = query;
-  const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-  const whereCondition: Prisma.PostWhereInput = search
-    ? {
-        OR: [
-          {
-            title: {
-              contains: search,
-              mode: 'insensitive',
+    const whereCondition: Prisma.PostWhereInput = search
+      ? {
+          OR: [
+            {
+              title: {
+                contains: search,
+                mode: 'insensitive',
+              },
             },
-          },
-          {
-            description: {
-              contains: search,
-              mode: 'insensitive',
+            {
+              description: {
+                contains: search,
+                mode: 'insensitive',
+              },
             },
-          },
+          ],
+        }
+      : {};
+
+    const [posts, total] = await this.prisma.$transaction([
+      this.prisma.post.findMany({
+        where: whereCondition,
+        skip,
+        take: limit,
+        orderBy: [
+          // newest first but can be improved later
+          { createdAt: 'desc' },
         ],
-      }
-    : {};
+        select: this.safeSelect,
+      }),
 
-  const [posts, total] = await this.prisma.$transaction([
-    this.prisma.post.findMany({
-      where: whereCondition,
-      skip,
-      take: limit,
-      orderBy: [
-        // newest first but can be improved later
-        { createdAt: 'desc' },
-      ],
-      select: this.safeSelect,
-    }),
+      this.prisma.post.count({
+        where: whereCondition,
+      }),
+    ]);
 
-    this.prisma.post.count({
-      where: whereCondition,
-    }),
-  ]);
+    return {
+      data: posts,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 
-  return {
-    data: posts,
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    },
-  };
-    }
-
-    // GET SINGLE POST + INCREMENT VIEWS
-    async findOne(id: number) {
+  // GET SINGLE POST + INCREMENT VIEWS
+  async findOne(id: number) {
     const post = await this.prisma.post.update({
       where: { id },
       data: {
@@ -119,15 +121,16 @@ export class PostsService {
     if (!post) throw new NotFoundException('Post not found');
 
     return post;
-    }
+  }
 
-    // Create Post
-    async create(
-        @Body() data : CreatePostDto ,
-        file: Express.Multer.File,
-        userId: number,
-    ){
-     try {
+  // Create Post
+  async create(
+    data: CreatePostDto,
+
+    file: Express.Multer.File,
+    userId: number,
+  ) {
+    try {
       let imageUrl: string | undefined;
       if (!file) {
         throw new BadRequestException('Image is required');
@@ -149,9 +152,9 @@ export class PostsService {
     } catch (error) {
       handlePrismaError(error);
     }
-    }
+  }
 
-     // UPDATE
+  // UPDATE
   async update(id: number, dto: UpdatePostDto) {
     try {
       return await this.prisma.post.update({
@@ -225,5 +228,3 @@ export class PostsService {
     }
   }
 }
-    
-

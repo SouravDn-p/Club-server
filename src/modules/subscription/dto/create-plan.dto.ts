@@ -13,7 +13,11 @@ import {
 import { Type, Transform } from 'class-transformer';
 
 export class CreatePlanDto {
-  @ApiProperty({ example: 'Pro Plan', description: 'Name of the subscription plan', maxLength: 100 })
+  @ApiProperty({
+    example: 'Pro Plan',
+    description: 'Name of the subscription plan',
+    maxLength: 100,
+  })
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
@@ -29,13 +33,23 @@ export class CreatePlanDto {
   @MaxLength(500)
   description?: string;
 
-  @ApiProperty({ example: 29.99, description: 'Plan price in USD', minimum: 0.01, type: Number })
+  @ApiProperty({
+    example: 29.99,
+    description: 'Plan price in USD',
+    minimum: 0.01,
+    type: Number,
+  })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
   price: number;
 
-  @ApiProperty({ example: 100, description: 'Credits granted on purchase', minimum: 1, type: Number })
+  @ApiProperty({
+    example: 100,
+    description: 'Credits granted on purchase',
+    minimum: 1,
+    type: Number,
+  })
   @Type(() => Number)
   @IsNumber()
   @Min(1)
@@ -43,13 +57,18 @@ export class CreatePlanDto {
 
   @ApiProperty({
     example: '["Access to all film notes","Download PDFs","Priority support"]',
-    description: 'JSON array of feature strings — send as a JSON string in multipart',
+    description:
+      'JSON array of feature strings — send as a JSON string in multipart',
   })
   @Transform(({ value }) => {
     if (typeof value === 'string') {
-      try { return JSON.parse(value); } catch { return [value]; }
+      try {
+        return JSON.parse(value) as string[];
+      } catch {
+        return [value];
+      }
     }
-    return value;
+    return value as string[];
   })
   @IsArray()
   @ArrayMinSize(1)

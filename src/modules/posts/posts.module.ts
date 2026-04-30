@@ -4,8 +4,8 @@ import { PostsService } from './posts.service';
 import { CloudinaryModule } from 'src/services/cloudinary/cloudinary.module';
 
 @Module({
-  imports : [CloudinaryModule],
+  imports: [CloudinaryModule],
   controllers: [PostsController],
-  providers: [PostsService]
+  providers: [PostsService],
 })
 export class PostsModule {}

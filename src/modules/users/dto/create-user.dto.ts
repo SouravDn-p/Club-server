@@ -11,7 +11,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 
 export class CreateUserDto {
-  @ApiPropertyOptional({ example: 'Sourav Debnath', description: 'Full name of the user' })
+  @ApiPropertyOptional({
+    example: 'Sourav Debnath',
+    description: 'Full name of the user',
+  })
   @IsString()
   @IsOptional()
   @MaxLength(100)
