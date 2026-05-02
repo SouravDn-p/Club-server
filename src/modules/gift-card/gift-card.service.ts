@@ -4,13 +4,15 @@ import { CreateGiftCardDto } from './dto/create-gift-card.dto';
 import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { handlePrismaError } from 'src/common/utils/prisma-error.util';
 import { ApiResponseHelper } from 'src/common/utils/api-response.util';
+import { UpdateGiftCardDto } from './dto/update-gift-card.dto';
+
 
 @Injectable()
 export class GiftCardService {
   constructor(
     private prisma: PrismaService,
     private cloudinary: CloudinaryService,
-  ) {}
+  ) { }
 
   async generateUniqueCode(): Promise<string> {
     const randomString = Math.random()
@@ -27,7 +29,11 @@ export class GiftCardService {
   // Get All Gift Card For Admin
   async getAll() {
     try {
-      const giftCards = await this.prisma.giftCard.findMany();
+      const giftCards = await this.prisma.giftCard.findMany({
+        where: {
+          isDeleted: false
+        }
+      });
       return ApiResponseHelper.success(
         giftCards,
         'Gift card list fetched successfully',
@@ -62,14 +68,85 @@ export class GiftCardService {
     }
   }
 
+  async updateGiftCard(
+    id: number,
+    dto: UpdateGiftCardDto,
+    file?: Express.Multer.File,
+  ) {
+    const findGiftCard = await this.prisma.giftCard.findUnique({
+      where: { id },
+    });
+
+    if (!findGiftCard || findGiftCard.isDeleted) {
+      throw new BadRequestException('Gift card not found');
+    }
+
+    let imageUrl: string | undefined;
+
+    if (file) {
+      const upload = await this.cloudinary.uploadFile(file, 'gift-cards');
+      imageUrl = upload.url;
+    }
+
+    const data: any = {};
+
+    if (dto.code !== undefined) {
+      data.code = dto.code;
+    }
+
+    if (dto.expiresAt !== undefined) {
+      data.expiresAt = new Date(dto.expiresAt);
+    }
+
+    if (imageUrl !== undefined) {
+      data.image = imageUrl;
+    }
+
+    return await this.prisma.giftCard.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteGiftCard(id: number) {
+    try {
+      const giftCard = await this.prisma.giftCard.findUnique({
+        where: { id },
+      })
+
+      if (!giftCard || giftCard.isDeleted) {
+        throw new BadRequestException('Gift card not found')
+      }
+
+      await this.prisma.giftCard.update({
+        where: { id },
+        data: {
+          isDeleted: true
+        }
+      })
+
+      return ApiResponseHelper.success(
+        null,
+        'Gift card deleted successfully',
+        200,
+      );
+    } catch (error) {
+      handlePrismaError(error)
+    }
+  }
+
   // User: CLAIM
   async claim(id: number, userId: number) {
     const giftCard = await this.prisma.giftCard.findUnique({
       where: { id },
     });
 
-    if (!giftCard || !giftCard.isActive) {
+    if (!giftCard || giftCard.isDeleted) {
       throw new BadRequestException('Invalid gift card');
+    }
+
+    if (!giftCard.isActive) {
+      throw new BadRequestException('Gift card is not active');
     }
 
     const alreadyClaimed = await this.prisma.giftCardUsage.findUnique({
@@ -101,7 +178,7 @@ export class GiftCardService {
       where: { id },
     });
 
-    if (!giftCard) throw new BadRequestException('Invalid card');
+    if (!giftCard || giftCard.isDeleted || !giftCard.isActive) throw new BadRequestException('Invalid card');
 
     const usage = await this.prisma.giftCardUsage.findUnique({
       where: {
@@ -150,4 +227,7 @@ export class GiftCardService {
       message: 'Gift card applied',
     };
   }
+
+
+
 }

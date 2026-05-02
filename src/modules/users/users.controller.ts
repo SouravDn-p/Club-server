@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -19,6 +20,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { Role } from 'src/common/decorators/role.decorator';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
+import { ApiResponseHelper } from 'src/common/utils/api-response.util';
 
 @ApiTags('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -57,5 +59,12 @@ export class UsersController {
   @Role(UserRole.ADMIN)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
+  }
+
+  @Patch(':id/toggle-block')
+  @Role(UserRole.ADMIN)
+  async toggleBlock(@Param('id', ParseIntPipe) id: number) {
+    const {user, message} = await this.usersService.toggleBlockStatus(id);
+    return ApiResponseHelper.success(user, message, HttpStatus.OK);
   }
 }

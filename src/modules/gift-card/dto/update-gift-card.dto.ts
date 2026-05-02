@@ -1,27 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DiscountType } from '@prisma/client';
-import { Type, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
-  IsEnum,
-  IsNumber,
   IsOptional,
   IsString,
   IsDateString,
 } from 'class-validator';
 
-export class CreateGiftCardDto {
-  @ApiProperty({ example: 'WELCOME100' })
+export class UpdateGiftCardDto {
+  @ApiPropertyOptional({ example: 'WELCOME100' })
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsString()
-  code: string;
-
-  @ApiProperty({ enum: DiscountType })
-  @IsEnum(DiscountType)
-  discountType: DiscountType;
-
-  @ApiProperty({ example: 20 })
-  @Type(() => Number)
-  @IsNumber()
-  discountValue: number;
+  @IsOptional()
+  code?: string;
 
   @ApiPropertyOptional({ example: '2026-12-31T00:00:00Z' })
   @Transform(({ value }) => (value === '' ? undefined : value))
@@ -35,5 +25,6 @@ export class CreateGiftCardDto {
     description: 'Gift card image',
   })
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   image?: any;
 }

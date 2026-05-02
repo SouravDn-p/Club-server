@@ -26,6 +26,7 @@ export class ReviewsService {
         name: true,
         email: true,
         avatarUrl: true,
+        location: true,
       },
     },
   } satisfies Prisma.ReviewSelect;

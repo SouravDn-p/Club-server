@@ -49,6 +49,7 @@ model User {
   password  String?
   phone     String?
   avatarUrl String?
+  location String?
 
   provider   String?  // e.g. "google", "github", "credentials"
   providerId String?  // OAuth provider's user ID
@@ -143,6 +144,7 @@ model GiftCard {
   discountValue Float
   expiresAt     DateTime?
   isActive      Boolean      @default(true)
+  isDeleted  Boolean @default(false)
 
   usages GiftCardUsage[]
 }

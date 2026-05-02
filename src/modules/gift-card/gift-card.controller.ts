@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
+  Patch,
   Post,
   UploadedFile,
   UseGuards,
@@ -13,15 +16,15 @@ import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { JwtUser } from 'src/common/types/commonAuthTypes';
-
 import { CreateGiftCardDto } from './dto/create-gift-card.dto';
 import { ClaimGiftCardDto } from './dto/claim-gift-card.dto';
 import { ApplyGiftCardDto } from './dto/apply-gift-card.dto';
+import { UpdateGiftCardDto } from './dto/update-gift-card.dto';
 
 @Controller('gift-cards')
 @ApiTags('gift-cards')
 export class GiftCardController {
-  constructor(private readonly service: GiftCardService) {}
+  constructor(private readonly service: GiftCardService) { }
 
   // ALL GIFT CARD
   @Get()
@@ -40,6 +43,15 @@ export class GiftCardController {
     return this.service.create(dto, file);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  update(@Param('id') id: number, @Body() dto: UpdateGiftCardDto, @UploadedFile() file: Express.Multer.File) {
+    return this.service.updateGiftCard(id, dto, file);
+  }
+
+
   //  CLAIM GIFT CARD
   @UseGuards(JwtAuthGuard)
   @Post('claim')
@@ -52,5 +64,11 @@ export class GiftCardController {
   @Post('apply')
   apply(@Body() dto: ApplyGiftCardDto, @CurrentUser() user: JwtUser) {
     return this.service.apply(dto.giftCardId, dto.planId, user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  delete(@Param('id') id: number) {
+    return this.service.deleteGiftCard(id);
   }
 }

@@ -67,6 +67,13 @@ export class AuthService {
       });
     }
 
+    if (user.isBlocked) {
+      throw new UnauthorizedException('Account is blocked');
+    }
+    if (user.isDeleted) {
+      throw new UnauthorizedException('Account has been deleted');
+    }
+
     const sessionId = uuidv4();
     const tokens = await this.generateTokens(
       user.id,
@@ -186,6 +193,9 @@ export class AuthService {
     if (!isValid) throw new UnauthorizedException('Invalid refresh token');
 
     const user = await this.usersService.findOne(userId);
+    if (user.isBlocked) {
+      throw new UnauthorizedException('Account is blocked');
+    }
     const newTokens = await this.generateTokens(
       user.id,
       user.email,

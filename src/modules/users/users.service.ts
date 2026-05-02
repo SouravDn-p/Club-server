@@ -65,7 +65,7 @@ export class UsersService {
       select: this.safeSelect,
     });
 
-    if (!user) throw new NotFoundException(`User #${id} not found`);
+    if (!user || user.isDeleted) throw new NotFoundException(`User #${id} not found`);
     return user;
   }
 
@@ -120,11 +120,29 @@ export class UsersService {
     await this.findOne(id);
 
     try {
-      const user = await this.prisma.user.delete({
+      const user = await this.prisma.user.update({
         where: { id },
+        data: { isDeleted: true },
         select: this.safeSelect,
       });
       return user;
+    } catch (error) {
+      this.handlePrismaError(error);
+    }
+  }
+
+  async toggleBlockStatus(id: number): Promise<{ user: SafeUser; message: string }> {
+    const user = await this.findOne(id);
+    const newStatus = !user.isBlocked;
+    const message = newStatus ? 'User blocked successfully' : 'User unblocked successfully';
+
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { id },
+        data: { isBlocked: newStatus },
+        select: this.safeSelect,
+      });
+      return { user: updatedUser as SafeUser, message };
     } catch (error) {
       this.handlePrismaError(error);
     }

@@ -2,21 +2,21 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateReviewDto {
-  @ApiProperty({
-    example: 'Sourav Debnath',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  name?: string;
+  // @ApiProperty({
+  //   example: 'Sourav Debnath',
+  //   required: false,
+  // })
+  // @IsOptional()
+  // @IsString()
+  // name?: string;
 
-  @ApiProperty({
-    example: 'Dhaka, Bangladesh',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  location?: string;
+  // @ApiProperty({
+  //   example: 'Dhaka, Bangladesh',
+  //   required: false,
+  // })
+  // @IsOptional()
+  // @IsString()
+  // location?: string;
 
   @ApiProperty({
     example: 5,
