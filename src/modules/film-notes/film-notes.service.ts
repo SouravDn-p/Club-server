@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { FilmCategory, Prisma } from '@prisma/client';
 
 import { PrismaService } from 'src/services/prisma/prisma.service';
@@ -93,7 +93,7 @@ export class FilmNotesService {
     };
   }
 
-  // 📌 GET ONE
+  //  GET ONE
   async getOne(id: number) {
     const film = await this.prisma.filmNote.findUnique({
       where: { id },
@@ -107,28 +107,18 @@ export class FilmNotesService {
     return film;
   }
 
-  // CREATE
+  // CREATE BASIC INFO
   async create(
     dto: CreateFilmNoteDto,
     files?: {
-      pdf?: Express.Multer.File[];
       poster1?: Express.Multer.File[];
       poster2?: Express.Multer.File[];
     },
   ) {
     try {
-      let pdfUrl: string | undefined;
       let poster1Url: string | undefined;
       let poster2Url: string | undefined;
 
-      if (files?.pdf?.[0]) {
-        const upload = await this.cloudinary.uploadFile(
-          files.pdf[0],
-          'film-notes/pdfs',
-          'pdf',
-        );
-        pdfUrl = upload.url;
-      }
       if (files?.poster1?.[0]) {
         const upload = await this.cloudinary.uploadFile(
           files.poster1[0],
@@ -146,25 +136,6 @@ export class FilmNotesService {
         poster2Url = upload.url;
       }
 
-      // Build contents: from uploaded PDF + any provided URL-based contents
-      const contentsData: { category: FilmCategory; pdfUrl: string }[] = [];
-
-      if (pdfUrl && dto.pdfCategory) {
-        contentsData.push({
-          category: dto.pdfCategory,
-          pdfUrl,
-        });
-      }
-
-      if (Array.isArray(dto.contents)) {
-        for (const c of dto.contents) {
-          contentsData.push({
-            category: c.category,
-            pdfUrl: c.pdfUrl,
-          });
-        }
-      }
-
       return await this.prisma.filmNote.create({
         data: {
           name: dto.name,
@@ -177,14 +148,6 @@ export class FilmNotesService {
           poster2: poster2Url ?? null,
           shortDescription: dto.shortDescription,
           directorsSignature: dto.directorsSignature,
-
-          categories:
-            Array.isArray(dto.categories) && dto.categories.length > 0
-              ? { create: dto.categories.map((c) => ({ category: c })) }
-              : undefined,
-
-          contents:
-            contentsData.length > 0 ? { create: contentsData } : undefined,
         },
         select: this.safeSelect,
       });
@@ -193,43 +156,78 @@ export class FilmNotesService {
     }
   }
 
-  //  UPDATE
+  // ADD CONTENT (PDF)
+  async addContent(
+    filmNoteId: number,
+    category: FilmCategory,
+    file?: Express.Multer.File,
+  ) {
+    try {
+      if (!file) throw new BadRequestException('PDF file is required');
+      // Check if film note exists
+      const filmNote = await this.prisma.filmNote.findUnique({
+        where: { id: filmNoteId },
+      });
+      if (!filmNote) throw new NotFoundException('Film note not found');
+
+      // Upload PDF
+      const upload = await this.cloudinary.uploadFile(
+        file,
+        'film-notes/pdfs',
+        'pdf',
+      );
+
+      // Create or update content
+      const content = await this.prisma.filmNoteContent.upsert({
+        where: {
+          filmNoteId_category: {
+            filmNoteId,
+            category,
+          },
+        },
+        update: {
+          pdfUrl: upload.url,
+        },
+        create: {
+          filmNoteId,
+          category,
+          pdfUrl: upload.url,
+        },
+      });
+
+      // Also ensure it's in categories (for tagging)
+      await this.prisma.filmNoteCategory.upsert({
+        where: {
+          filmNoteId_category: {
+            filmNoteId,
+            category,
+          },
+        },
+        update: {},
+        create: {
+          filmNoteId,
+          category,
+        },
+      });
+
+      return content;
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  }
+
+  //  UPDATE BASIC INFO
   async update(
     id: number,
     dto: UpdateFilmNoteDto,
     files?: {
-      pdf?: Express.Multer.File[];
       poster1?: Express.Multer.File[];
       poster2?: Express.Multer.File[];
     },
   ) {
     try {
-      // Strip file-only fields — they come via @UploadedFiles(), not Prisma data
-      const { categories, contents, pdfCategory, ...restData } = dto as {
-        categories?: FilmCategory[];
-        contents?: { category: FilmCategory; pdfUrl: string }[];
-        pdfCategory?: FilmCategory;
-        [key: string]: any;
-      };
+      const updateData: Prisma.FilmNoteUpdateInput = { ...dto };
 
-      const updateData: Prisma.FilmNoteUpdateInput = { ...restData };
-
-      if (Array.isArray(categories) && categories.length > 0) {
-        updateData.categories = {
-          deleteMany: {},
-          create: categories.map((c: FilmCategory) => ({ category: c })),
-        };
-      }
-
-      let pdfUrl: string | undefined;
-      if (files?.pdf?.[0]) {
-        const upload = await this.cloudinary.uploadFile(
-          files.pdf[0],
-          'film-notes/pdfs',
-          'pdf',
-        );
-        pdfUrl = upload.url;
-      }
       if (files?.poster1?.[0]) {
         const upload = await this.cloudinary.uploadFile(
           files.poster1[0],
@@ -245,25 +243,6 @@ export class FilmNotesService {
           'image',
         );
         updateData.poster2 = upload.url;
-      }
-
-      const contentsData: { category: FilmCategory; pdfUrl: string }[] = [];
-
-      if (pdfUrl && pdfCategory) {
-        contentsData.push({ category: pdfCategory, pdfUrl });
-      }
-
-      if (Array.isArray(contents)) {
-        for (const c of contents) {
-          contentsData.push({
-            category: c.category,
-            pdfUrl: c.pdfUrl,
-          });
-        }
-      }
-
-      if (contentsData.length > 0) {
-        updateData.contents = { deleteMany: {}, create: contentsData };
       }
 
       return await this.prisma.filmNote.update({
@@ -288,7 +267,7 @@ export class FilmNotesService {
   }
 
   //  UNLOCK CONTENT
-  async unlockContent(filmNoteId: number, category: string, userId: number) {
+  async unlockContent(filmNoteId: number, category: FilmCategory, userId: number) {
     try {
       const existing = await this.prisma.unlockedContent.findUnique({
         where: {

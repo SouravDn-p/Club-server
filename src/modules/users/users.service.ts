@@ -105,14 +105,14 @@ export class UsersService {
     let imageUrl: string | undefined;
 
     if (file) {
-      const upload = await this.cloudinary.uploadFile(file, 'gift-cards');
+      const upload = await this.cloudinary.uploadFile(file, 'users');
       imageUrl = upload.url;
     }
 
     const data: Prisma.UserUpdateInput = {};
     if (dto.name !== undefined) data.name = dto.name;
     if (dto.phone !== undefined) data.phone = dto.phone;
-    if (dto.avatar !== undefined) data.avatarUrl = imageUrl
+    if (imageUrl !== undefined) data.avatarUrl = imageUrl
 
     try {
       const user = await this.prisma.user.update({

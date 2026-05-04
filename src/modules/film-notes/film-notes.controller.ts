@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,23 +9,25 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { FilmNotesService } from './film-notes.service';
 import { CreateFilmNoteDto } from './dto/create-film-note.dto';
 import { UpdateFilmNoteDto } from './dto/update-film-note.dto';
 import { GetFilmNotesQueryDto } from './dto/get-film-notes-query.dto';
+import { AddFilmNoteContentDto } from './dto/add-film-note-content.dto';
+import { UnlockFilmNoteDto } from './dto/unlock-film-note.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtUser } from 'src/common/types/commonAuthTypes';
-import { filmNoteMulterOptions } from 'src/config/multer.config';
+import { filmNoteMulterOptions, pdfMulterOptions } from 'src/config/multer.config';
 
 type FilmNoteFiles = {
-  pdf?: Express.Multer.File[];
   poster1?: Express.Multer.File[];
   poster2?: Express.Multer.File[];
 };
@@ -48,14 +51,12 @@ export class FilmNotesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @ApiOperation({ summary: 'Create a film note' })
+  @ApiOperation({ summary: 'Create a film note basic info' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'pdf', maxCount: 1 },
         { name: 'poster1', maxCount: 1 },
-        { name: 'poster2', maxCount: 1 },
       ],
       filmNoteMulterOptions,
     ),
@@ -68,13 +69,25 @@ export class FilmNotesController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Post(':id/content')
+  @ApiOperation({ summary: 'Add content (PDF) to a film note by category' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('pdf', pdfMulterOptions))
+  addContent(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AddFilmNoteContentDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.service.addContent(id, dto.category, file);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a film note' })
+  @ApiOperation({ summary: 'Update a film note basic info' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: 'pdf', maxCount: 1 },
         { name: 'poster1', maxCount: 1 },
         { name: 'poster2', maxCount: 1 },
       ],
@@ -101,9 +114,9 @@ export class FilmNotesController {
   @ApiOperation({ summary: 'Unlock film note content for a user' })
   unlock(
     @Param('id', ParseIntPipe) filmNoteId: number,
-    @Body('category') category: string,
+    @Body() dto: UnlockFilmNoteDto,
     @CurrentUser() user: JwtUser,
   ) {
-    return this.service.unlockContent(filmNoteId, category, user.userId);
+    return this.service.unlockContent(filmNoteId, dto.category, user.userId);
   }
 }

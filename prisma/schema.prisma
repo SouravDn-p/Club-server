@@ -190,7 +190,9 @@ model FilmNoteCategory {
   filmNoteId Int
   category   FilmCategory
 
-  filmNote FilmNote @relation(fields: [filmNoteId], references: [id])
+  filmNote FilmNote @relation(fields: [filmNoteId], references: [id] , onDelete: Cascade)
+
+  @@unique([filmNoteId, category])
 }
 
 model FilmNoteContent {
@@ -199,7 +201,9 @@ model FilmNoteContent {
   category   FilmCategory
   pdfUrl     String
 
-  filmNote FilmNote @relation(fields: [filmNoteId], references: [id])
+  filmNote FilmNote @relation(fields: [filmNoteId], references: [id] , onDelete: Cascade)
+
+  @@unique([filmNoteId, category])
 }
 
 model UnlockedContent {
