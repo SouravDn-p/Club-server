@@ -26,6 +26,7 @@ import { Role } from 'src/common/decorators/role.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtUser } from 'src/common/types/commonAuthTypes';
 import { imageMulterOptions } from 'src/config/multer.config';
+import { ApiResponseHelper } from 'src/common/utils/api-response.util';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')
@@ -34,8 +35,9 @@ export class SubscriptionController {
 
   @Get()
   @ApiOperation({ summary: 'Get all subscription plans' })
-  getPlans() {
-    return this.service.getPlans();
+  async getPlans() {
+    const plans = await this.service.getPlans();
+    return ApiResponseHelper.success(plans, "Plans Recived Successfully", 200 );
   }
 
   @Get(':id')

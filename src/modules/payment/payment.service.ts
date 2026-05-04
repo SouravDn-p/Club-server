@@ -5,10 +5,36 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/services/prisma/prisma.service';
 import { handlePrismaError } from 'src/common/utils/prisma-error.util';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class PaymentService {
   constructor(private prisma: PrismaService) {}
+
+  async getAllPayments(paginationDto: PaginationDto){
+    const { page = 1, limit = 10 } = paginationDto;
+    const skip = (page -1) * limit
+    const [payments , total] = await this.prisma.$transaction([
+      this.prisma.payment.findMany({
+        skip,
+        take:limit,
+        orderBy: {
+          createdAt : "desc"
+        }
+      }),
+      this.prisma.payment.count()
+    ])
+
+    return {
+      data: payments,
+      paginationMeta: {
+        total , 
+        page,
+        limit,
+        totalPages : Math.ceil(total/limit)
+      }
+    }
+  } 
 
   // 🔹 CREATE PAYMENT
   async create(planId: number, userId: number) {

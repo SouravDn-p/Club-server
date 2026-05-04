@@ -61,6 +61,7 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/toggle-block')
   @Role(UserRole.ADMIN)
   async toggleBlock(@Param('id', ParseIntPipe) id: number) {

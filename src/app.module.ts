@@ -11,6 +11,7 @@ import { FilmNotesModule } from './modules/film-notes/film-notes.module';
 import { GiftCardModule } from './modules/gift-card/gift-card.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import appConfig from './config/app.config';
 import jwtConfig from './config/jwt.config';
 import cloudinaryConfig from './config/cloudinary.config';
@@ -39,6 +40,7 @@ import googleOauthConfig from './config/google-oauth.config';
     GiftCardModule,
     SubscriptionModule,
     PaymentModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

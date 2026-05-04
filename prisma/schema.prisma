@@ -261,7 +261,7 @@ model PostComment {
   comment   String
   createdAt DateTime @default(now())
 
-  post Post @relation(fields: [postId], references: [id])
+  post Post @relation(fields: [postId], references: [id] , onDelete: Cascade)
   user User @relation(fields: [userId], references: [id])
 }
 
@@ -271,7 +271,7 @@ model PostLike {
   userId    Int
   createdAt DateTime @default(now())
 
-  post Post @relation(fields: [postId], references: [id])
+  post Post @relation(fields: [postId], references: [id] , onDelete: Cascade)
   user User @relation(fields: [userId], references: [id])
 
   @@unique([postId, userId]) // prevent duplicate likes
