@@ -9,9 +9,11 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +23,9 @@ import { Role } from 'src/common/decorators/role.decorator';
 import { RolesGuard } from 'src/common/guards/role.guard';
 import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
 import { ApiResponseHelper } from 'src/common/utils/api-response.util';
+import {  FileInterceptor } from '@nestjs/platform-express';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { JwtUser } from 'src/common/types/commonAuthTypes';
 
 @ApiTags('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -46,13 +51,16 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Patch(':id')
-  @Role(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard)
+  @Patch('')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('avatar'))
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user : JwtUser,
     @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file : Express.Multer.File
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(user.userId, updateUserDto , file);
   }
 
   @Delete(':id')

@@ -14,6 +14,8 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from 'src/common/types/commonAuthTypes';
 import { SafeUser } from '../users/types/userTypes';
+import { ConfigService } from '@nestjs/config';
+import { handlePrismaError } from 'src/common/utils/prisma-error.util';
 
 export type Tokens = { accessToken: string; refreshToken: string };
 export type AuthResult = { user: SafeUser; tokens: Tokens };
@@ -26,7 +28,8 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-  ) {}
+    private readonly configService: ConfigService
+  ) { }
 
   // ── Google OAuth ──────────────────────────────────────────────────────────
 
@@ -223,7 +226,7 @@ export class AuthService {
     try {
       await this.prisma.authToken.deleteMany({ where: { sessionId } });
     } catch (error) {
-      this.handlePrismaError(error);
+      handlePrismaError(error);
     }
   }
 
@@ -233,7 +236,7 @@ export class AuthService {
     try {
       await this.prisma.authToken.deleteMany({ where: { userId } });
     } catch (error) {
-      this.handlePrismaError(error);
+      handlePrismaError(error);
     }
   }
 
@@ -254,12 +257,12 @@ export class AuthService {
     const payload: JwtPayload = { sub: userId, email, role, sessionId };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_ACCESS_SECRET,
-        expiresIn: '15m',
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: 15 * 60,
       }),
       this.jwtService.signAsync(payload, {
-        secret: process.env.JWT_REFRESH_SECRET,
-        expiresIn: '7d',
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: 7 * 24 * 60 * 60,
       }),
     ]);
     return { accessToken, refreshToken };
@@ -299,30 +302,8 @@ export class AuthService {
         },
       });
     } catch (error) {
-      this.handlePrismaError(error);
+      handlePrismaError(error);
     }
   }
 
-  private handlePrismaError(error: unknown): never {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      switch (error.code) {
-        case 'P2002':
-          throw new ConflictException('Duplicate session');
-        case 'P2025':
-          throw new UnauthorizedException('Session not found');
-        case 'P2003':
-          throw new ConflictException('Foreign key constraint failed');
-        default:
-          throw new InternalServerErrorException(
-            `Database error: ${error.code}`,
-          );
-      }
-    }
-    if (error instanceof Prisma.PrismaClientValidationError) {
-      throw new InternalServerErrorException(
-        'Invalid data provided to database',
-      );
-    }
-    throw error;
-  }
 }

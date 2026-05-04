@@ -9,6 +9,7 @@ import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 import { handlePrismaError } from 'src/common/utils/prisma-error.util';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { features } from 'process';
 
 @Injectable()
 export class SubscriptionService {
@@ -43,29 +44,32 @@ export class SubscriptionService {
 
   async createPlan(dto: CreatePlanDto, imageFile?: Express.Multer.File) {
     try {
-      if (!imageFile) {
-        throw new BadRequestException('Plan cover image is required');
-      }
+      // if (!imageFile) {
+      //   throw new BadRequestException('Plan cover image is required');
+      // }
 
-      const { url: imageUrl } = await this.cloudinary.uploadFile(
-        imageFile,
-        'subscriptions',
-        'image',
-      );
+      // const { url: imageUrl } = await this.cloudinary.uploadFile(
+      //   imageFile,
+      //   'subscriptions',
+      //   'image',
+      // );
 
-      return await this.prisma.subscriptionPlan.create({
-        data: {
-          title: dto.title,
-          description: dto.description,
-          price: dto.price,
-          credits: dto.credits,
-          image: imageUrl,
-          features: {
-            create: dto.features.map((text) => ({ text })),
-          },
-        },
-        include: { features: true },
-      });
+      const featuresData = dto.features.map((text) => ({ text }))
+      console.log(features)
+
+      // return await this.prisma.subscriptionPlan.create({
+      //   data: {
+      //     title: dto.title,
+      //     description: dto.description,
+      //     price: dto.price,
+      //     credits: dto.credits,
+      //     image: imageUrl,
+      //     features: {
+      //       create: dto.features.map((text) => ({ text })),
+      //     },
+      //   },
+      //   include: { features: true },
+      // });
     } catch (error) {
       handlePrismaError(error);
     }

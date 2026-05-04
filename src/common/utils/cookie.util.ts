@@ -14,7 +14,8 @@ export function setAuthCookies(
 ): void {
   res.cookie('accessToken', tokens.accessToken, {
     ...BASE_OPTIONS,
-    maxAge: 15 * 60 * 1000, // 15 minutes
+    // maxAge: 15 * 60 * 1000,  15 minutes
+    maxAge: 1 * 24 * 60 * 60 * 1000, // 24 hours
   });
   res.cookie('refreshToken', tokens.refreshToken, {
     ...BASE_OPTIONS,

@@ -11,10 +11,15 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
+import { CloudinaryService } from 'src/services/cloudinary/cloudinary.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cloudinary : CloudinaryService
+  ) {}
+
 
   // Fields returned for all user queries (excludes password)
   private readonly safeSelect = {
@@ -94,15 +99,20 @@ export class UsersService {
     }
   }
 
-  async update(id: number, dto: UpdateUserDto): Promise<SafeUser> {
+  async update(id: number, dto: UpdateUserDto , file?: Express.Multer.File): Promise<SafeUser> {
     await this.findOne(id);
+
+    let imageUrl: string | undefined;
+
+    if (file) {
+      const upload = await this.cloudinary.uploadFile(file, 'gift-cards');
+      imageUrl = upload.url;
+    }
 
     const data: Prisma.UserUpdateInput = {};
     if (dto.name !== undefined) data.name = dto.name;
-    if (dto.email !== undefined) data.email = dto.email;
     if (dto.phone !== undefined) data.phone = dto.phone;
-    if (dto.role !== undefined) data.role = dto.role;
-    if (dto.password) data.password = await bcrypt.hash(dto.password, 10);
+    if (dto.avatar !== undefined) data.avatarUrl = imageUrl
 
     try {
       const user = await this.prisma.user.update({
