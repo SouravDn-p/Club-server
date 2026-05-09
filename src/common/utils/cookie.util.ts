@@ -5,7 +5,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const BASE_OPTIONS = {
   httpOnly: true,
   secure: IS_PROD,
-  sameSite: IS_PROD ? 'strict' : 'lax',
+  sameSite: IS_PROD ? 'none' : 'lax',
 } as const;
 
 export function setAuthCookies(
