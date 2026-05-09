@@ -27,7 +27,9 @@ import { ApiResponseHelper } from 'src/common/utils/api-response.util';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService
+  ) {}
 
   @Public()
   @Post('register')
@@ -57,6 +59,8 @@ export class AuthController {
   ) {
     const userAgent = req.headers['user-agent'];
     const { user, tokens } = await this.authService.login(dto, userAgent);
+    console.log("🚀 ~ AuthController ~ user:", user)
+    console.log("🚀 ~ AuthController ~ tokens:", tokens)
     setAuthCookies(res, tokens);
     return ApiResponseHelper.success(user, 'Logged in successfully');
   }

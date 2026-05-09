@@ -12,7 +12,7 @@ export default registerAs<JwtConfig>(
   (): JwtConfig => ({
     accessSecret: process.env.JWT_ACCESS_SECRET!,
     refreshSecret: process.env.JWT_REFRESH_SECRET!,
-    accessExpiresIn: Number(process.env.JWT_ACCESS_EXPIRES_IN) || 900,
+    accessExpiresIn: Number(process.env.JWT_ACCESS_EXPIRES_IN) || 72000,
     refreshExpiresIn: Number(process.env.JWT_REFRESH_EXPIRES_IN) || 604800,
   }),
 );
