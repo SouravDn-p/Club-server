@@ -1,17 +1,19 @@
 import type { Response } from 'express';
 
-const IS_PROD = process.env.NODE_ENV === 'production';
+const IS_PROD = process.env.NODE_ENV == 'production';
+
 
 const BASE_OPTIONS = {
   httpOnly: true,
   secure: IS_PROD,
-  sameSite: IS_PROD ? 'none' : 'lax',
+  sameSite: IS_PROD ? 'none' : 'strict',
 } as const;
 
 export function setAuthCookies(
   res: Response,
   tokens: { accessToken: string; refreshToken: string },
 ): void {
+  console.log("🚀 ~ IS_PROD:", IS_PROD)
   res.cookie('accessToken', tokens.accessToken, {
     ...BASE_OPTIONS,
     // maxAge: 15 * 60 * 1000,  15 minutes
