@@ -6,7 +6,8 @@ const IS_PROD = process.env.NODE_ENV == 'production';
 const BASE_OPTIONS = {
   httpOnly: true,
   secure: IS_PROD,
-  sameSite: IS_PROD ? 'none' : 'strict',
+  sameSite: IS_PROD ? 'none' : 'lax',
+  path: "/"
 } as const;
 
 export function setAuthCookies(
@@ -26,6 +27,6 @@ export function setAuthCookies(
 }
 
 export function clearAuthCookies(res: Response): void {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  res.clearCookie('accessToken', BASE_OPTIONS);
+  res.clearCookie('refreshToken', BASE_OPTIONS);
 }

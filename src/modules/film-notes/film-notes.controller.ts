@@ -26,6 +26,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt.auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { JwtUser } from 'src/common/types/commonAuthTypes';
 import { filmNoteMulterOptions, pdfMulterOptions } from 'src/config/multer.config';
+import { Role } from 'src/common/decorators/role.decorator';
+import { UserRole } from '@prisma/client';
 
 type FilmNoteFiles = {
   poster1?: Express.Multer.File[];
@@ -53,6 +55,7 @@ export class FilmNotesController {
   @Post()
   @ApiOperation({ summary: 'Create a film note basic info' })
   @ApiConsumes('multipart/form-data')
+  @Role(UserRole.ADMIN)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -70,9 +73,11 @@ export class FilmNotesController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/content')
+  @Role(UserRole.ADMIN)
   @ApiOperation({ summary: 'Add content (PDF) to a film note by category' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('pdf', pdfMulterOptions))
+
   addContent(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddFilmNoteContentDto,
@@ -83,6 +88,7 @@ export class FilmNotesController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
+  @Role(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update a film note basic info' })
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
@@ -104,6 +110,7 @@ export class FilmNotesController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
+  @Role(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete a film note' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id);

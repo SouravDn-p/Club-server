@@ -10,8 +10,10 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  app.set('trust proxy', 1);
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001' ,'https://film-club-sd.vercel.app'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'https://film-club-sd.vercel.app'],
     credentials: true,
   });
 
