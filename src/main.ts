@@ -19,10 +19,11 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+  // ✅ FIX: Use express.raw() BEFORE global json() middleware
   app.use(
-  '/payments/webhook',
-  bodyParser.raw({ type: 'application/json' }),
-);
+    '/payments/webhook',
+    bodyParser.raw({ type: 'application/json' }),
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({

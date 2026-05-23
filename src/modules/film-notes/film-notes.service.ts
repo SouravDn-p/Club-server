@@ -13,7 +13,7 @@ export class FilmNotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
-  ) {}
+  ) { }
 
   private safeSelect = {
     id: true,
@@ -54,19 +54,19 @@ export class FilmNotesService {
       AND: [
         search
           ? {
-              name: {
-                contains: search,
-                mode: 'insensitive',
-              },
-            }
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          }
           : {},
         genre
           ? {
-              genre: {
-                contains: genre,
-                mode: 'insensitive',
-              },
-            }
+            genre: {
+              contains: genre,
+              mode: 'insensitive',
+            },
+          }
           : {},
       ],
     };
@@ -291,6 +291,15 @@ export class FilmNotesService {
           userId,
           filmNoteId,
           category: category as FilmCategory,
+        },
+      });
+
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          credits: {
+            decrement: 1,
+          },
         },
       });
 
