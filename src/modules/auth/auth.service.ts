@@ -1,8 +1,6 @@
 import {
   Injectable,
   UnauthorizedException,
-  ConflictException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, UserRole } from '@prisma/client';
@@ -123,7 +121,8 @@ export class AuthService {
   // ── Login ─────────────────────────────────────────────────────────────────
 
   async login(dto: LoginDto, userAgent?: string): Promise<AuthResult> {
-    const user = await this.usersService.findByEmail(dto.email);
+    try {
+      const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) throw new UnauthorizedException('Invalid credentials');
     if (user.isBlocked) throw new UnauthorizedException('Account is blocked');
@@ -166,6 +165,9 @@ export class AuthService {
     };
 
     return { user: safeUser, tokens };
+    } catch (error) {
+      handlePrismaError(error);
+    }
   }
 
   // ── Refresh ───────────────────────────────────────────────────────────────

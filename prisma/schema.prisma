@@ -67,6 +67,7 @@ model User {
 
   role      UserRole @default(USER)
   credits   Int      @default(0)
+  stripeCustomerId String? @unique
 
   // relations
   lastSubscriptionPlan   SubscriptionPlan? @relation(fields: [lastSubscriptionPlanId], references: [id])
@@ -112,6 +113,7 @@ model SubscriptionPlan {
   price       Float
   credits     Int
   image       String
+  currency    Currency @default(USD)
 
   // features as separate table (better than array)
   features SubscriptionFeature[]

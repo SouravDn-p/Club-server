@@ -44,32 +44,32 @@ export class SubscriptionService {
 
   async createPlan(dto: CreatePlanDto, imageFile?: Express.Multer.File) {
     try {
-      // if (!imageFile) {
-      //   throw new BadRequestException('Plan cover image is required');
-      // }
+      if (!imageFile) {
+        throw new BadRequestException('Plan cover image is required');
+      }
 
-      // const { url: imageUrl } = await this.cloudinary.uploadFile(
-      //   imageFile,
-      //   'subscriptions',
-      //   'image',
-      // );
+      const { url: imageUrl } = await this.cloudinary.uploadFile(
+        imageFile,
+        'subscriptions',
+        'image',
+      );
 
       const featuresData = dto.features.map((text) => ({ text }))
       console.log(features)
 
-      // return await this.prisma.subscriptionPlan.create({
-      //   data: {
-      //     title: dto.title,
-      //     description: dto.description,
-      //     price: dto.price,
-      //     credits: dto.credits,
-      //     image: imageUrl,
-      //     features: {
-      //       create: dto.features.map((text) => ({ text })),
-      //     },
-      //   },
-      //   include: { features: true },
-      // });
+      return await this.prisma.subscriptionPlan.create({
+        data: {
+          title: dto.title,
+          description: dto.description,
+          price: dto.price,
+          credits: dto.credits,
+          image: imageUrl,
+          features: {
+            create: dto.features.map((text) => ({ text })),
+          },
+        },
+        include: { features: true },
+      });
     } catch (error) {
       handlePrismaError(error);
     }
@@ -139,7 +139,7 @@ export class SubscriptionService {
             userId,
             planId,
             amount: plan.price,
-            status: PaymentStatus.SUCCESS,
+            status: PaymentStatus.SUCCEEDED,
           },
         }),
         this.prisma.user.update({
@@ -155,7 +155,7 @@ export class SubscriptionService {
         message: 'Subscription purchased successfully',
         creditsAdded: plan.credits,
         paymentId: payment.id,
-        status: PaymentStatus.SUCCESS,
+        status: PaymentStatus.SUCCEEDED,
       };
     } catch (error) {
       handlePrismaError(error);

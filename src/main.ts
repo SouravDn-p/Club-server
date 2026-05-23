@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -18,6 +19,10 @@ async function bootstrap() {
   });
 
   app.use(cookieParser());
+  app.use(
+  '/payments/webhook',
+  bodyParser.raw({ type: 'application/json' }),
+);
 
   app.useGlobalPipes(
     new ValidationPipe({
