@@ -135,6 +135,8 @@ export class AuthController {
       tokens: { accessToken: string; refreshToken: string };
     };
     setAuthCookies(res, tokens);
-    res.redirect(`${process.env.FRONTEND_URL}/auth/success`);
+    res.redirect(
+      `${process.env.FRONTEND_URL}/auth/success?token=${tokens.accessToken}`,
+    );
   }
 }

@@ -18,6 +18,7 @@ import type { JwtUser } from 'src/common/types/commonAuthTypes';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { GetReviewQueryDto } from './dto/get-review.dto';
 
 @Controller('reviews')
 @ApiTags('reviews')
@@ -32,7 +33,9 @@ export class ReviewsController {
   }
 
   @Get()
-  findAll(@Query() query: PaginationDto) {
+  findAll(
+    @Query() query: GetReviewQueryDto,
+  ) {
     return this.reviews.findAllReviews(query);
   }
 

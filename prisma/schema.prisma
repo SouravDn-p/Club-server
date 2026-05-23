@@ -34,8 +34,15 @@ enum DiscountType {
 
 enum PaymentStatus {
   PENDING
-  SUCCESS
+  SUCCEEDED
   FAILED
+  CANCELED
+  REFUNDED
+}
+
+enum Currency {
+  USD
+  BDT
 }
 
 // =======================
@@ -123,18 +130,44 @@ model SubscriptionFeature {
   plan SubscriptionPlan @relation(fields: [planId], references: [id])
 }
 
-model Payment {
-  id              Int   @id @default(autoincrement())
-  userId          Int
-  planId          Int
-  stripePaymentId String?
-  amount          Float
-  status          PaymentStatus
-  createdAt       DateTime @default(now())
+// =======================
+// PAYMENTS
+// =======================
 
-  user User             @relation(fields: [userId], references: [id])
+model Payment {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  planId Int
+
+  amount Decimal @db.Decimal(10,2)
+
+  currency Currency @default(USD)
+
+  status PaymentStatus @default(PENDING)
+
+  stripePaymentIntentId String? @unique
+  stripeChargeId        String?
+  stripeCustomerId      String?
+
+  paidAt DateTime?
+
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
   plan SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
 }
+
+// =======================
+// GIFT CARDS
+// =======================
 
 model GiftCard {
   id            Int   @id @default(autoincrement())

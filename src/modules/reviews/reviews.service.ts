@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { handlePrismaError } from 'src/common/utils/prisma-error.util';
 import { JwtUser } from 'src/common/types/commonAuthTypes';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { GetReviewQueryDto } from './dto/get-review.dto';
 
 @Injectable()
 export class ReviewsService {
@@ -66,18 +67,28 @@ export class ReviewsService {
     };
   }
 
-  async findAllReviews(paginationDto: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto;
+  async findAllReviews(getReviewDto: GetReviewQueryDto) {
+    const { page = 1, limit = 10, rating = undefined } = getReviewDto;
     const skip = (page - 1) * limit;
+
+    // 1. Build a dynamic where clause based on provided filters
+    const where: any = {};
+
+    if (rating !== undefined) {
+      where.rating = typeof rating === 'string' ? parseInt(rating, 10) : rating;
+    }
 
     const [reviews, total] = await this.prisma.$transaction([
       this.prisma.review.findMany({
+        where ,
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
         select: this.safeSelect,
       }),
-      this.prisma.review.count(),
+      this.prisma.review.count({
+        where, // Crucial: Applies the exact same filtering to the count
+      }),
     ]);
 
     const paginatedReviews = {

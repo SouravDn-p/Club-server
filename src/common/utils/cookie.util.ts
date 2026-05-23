@@ -2,7 +2,6 @@ import type { Response } from 'express';
 
 const IS_PROD = process.env.NODE_ENV == 'production';
 
-
 const BASE_OPTIONS = {
   httpOnly: true,
   secure: IS_PROD,
